@@ -4,6 +4,8 @@ An Obsidian plugin that progressively expands the selection outward, modelled af
 
 ## Usage
 
+You'll need to assign the keybindings to `Expand Selection` and `Shrink Selection` yourself.
+
 Press **⌃⇧⌘→** (Control+Shift+Command+Right Arrow) repeatedly to grow the selection one unit at a time. Each press wraps the current selection in the next larger syntactic unit. Moving the cursor or changing the selection manually resets the expansion.
 
 Press **⌃⇧⌘←** (Control+Shift+Command+Left Arrow) to shrink back through the expansion history one step at a time. Shrink only works while the selection exactly matches the last expanded selection — any manual change to the cursor or selection clears the history.
