@@ -156,13 +156,13 @@ export default class Expandomatic extends Plugin {
     const from = posMin(cur.anchor, cur.head);
     const to   = posMax(cur.anchor, cur.head);
 
-    // No selection → select nearest word.
+    // No selection → select nearest word, or nearest section if no word nearby.
     if (posEq(from, to)) {
-      const w = this.nearestWord(editor, from);
-      if (w) {
+      const target = this.nearestWord(editor, from) ?? this.nearestSection(editor, from);
+      if (target) {
         this.selStack.push(cur);
-        editor.setSelection(w.anchor, w.head);
-        this.lastSet = w;
+        editor.setSelection(target.anchor, target.head);
+        this.lastSet = target;
       }
       return;
     }
@@ -317,6 +317,33 @@ export default class Expandomatic extends Plugin {
       }
     }
     return null;
+  }
+
+  private nearestSection(editor: Editor, pos: EditorPosition): Range | null {
+    const lineCount = editor.lineCount();
+    const headings: { line: number; level: number }[] = [];
+    for (let i = 0; i < lineCount; i++) {
+      const lv = headingLevel(editor.getLine(i));
+      if (lv > 0) headings.push({ line: i, level: lv });
+    }
+    if (headings.length === 0) return null;
+
+    // Pick the heading closest to pos.line; ties go to the earlier one.
+    let nearestIdx = 0;
+    let nearestDist = Math.abs(headings[0].line - pos.line);
+    for (let i = 1; i < headings.length; i++) {
+      const d = Math.abs(headings[i].line - pos.line);
+      if (d < nearestDist) { nearestDist = d; nearestIdx = i; }
+    }
+
+    const h = headings[nearestIdx];
+    let endLine = lineCount - 1;
+    for (let hj = nearestIdx + 1; hj < headings.length; hj++) {
+      if (headings[hj].level <= h.level) { endLine = headings[hj].line - 1; break; }
+    }
+    while (endLine > h.line && editor.getLine(endLine).trim() === '') endLine--;
+
+    return rng(h.line, 0, endLine, editor.getLine(endLine).length);
   }
 
   // Prose: URL
