@@ -36,6 +36,20 @@ function headingLevel(line: string): number {
   return m ? m[1].length : 0;
 }
 
+function bulletMatch(line: string): RegExpMatchArray | null {
+  return line.match(/^(\s*)([-*+]|\d+\.)\s+/);
+}
+
+function bulletIndentLevel(line: string): number {
+  const m = bulletMatch(line);
+  return m ? m[1].length : -1;
+}
+
+function bulletContentOffset(line: string): number {
+  const m = bulletMatch(line);
+  return m ? m[0].length : -1;
+}
+
 // ─── Sentence parsing ────────────────────────────────────────────────────────
 
 function findSentenceBoundaries(text: string): number[] {
@@ -122,22 +136,20 @@ export default class Expandomatic extends Plugin {
     this.addCommand({
       id: 'expand-selection',
       name: 'Expand Selection',
-      hotkeys: [{ modifiers: ['Ctrl', 'Shift', 'Mod'], key: 'ArrowRight' }],
       editorCallback: (editor: Editor) => this.expand(editor),
     });
     this.addCommand({
       id: 'shrink-selection',
       name: 'Shrink Selection',
-      hotkeys: [{ modifiers: ['Ctrl', 'Shift', 'Mod'], key: 'ArrowLeft' }],
       editorCallback: (editor: Editor) => this.shrink(editor),
     });
   }
 
-  onunload() {}
+  onunload() { }
 
   private rangeEq(a: Range, b: Range): boolean {
     return posEq(posMin(a.anchor, a.head), posMin(b.anchor, b.head)) &&
-           posEq(posMax(a.anchor, a.head), posMax(b.anchor, b.head));
+      posEq(posMax(a.anchor, a.head), posMax(b.anchor, b.head));
   }
 
   private expand(editor: Editor) {
@@ -154,7 +166,7 @@ export default class Expandomatic extends Plugin {
     }
 
     const from = posMin(cur.anchor, cur.head);
-    const to   = posMax(cur.anchor, cur.head);
+    const to = posMax(cur.anchor, cur.head);
 
     // No selection → select nearest word, or nearest section if no word nearby.
     if (posEq(from, to)) {
@@ -211,6 +223,7 @@ export default class Expandomatic extends Plugin {
       const inside = mk(from.line, from.ch + 1);
       if (inside.ch <= to.ch && this.inEquation(editor, inside)) return 'equation';
     }
+    if (bulletMatch(line)) return 'list';
     return 'prose';
   }
 
@@ -281,6 +294,20 @@ export default class Expandomatic extends Plugin {
           this.eqLine(editor, from),
           this.wholeDoc(editor),
         ];
+      case 'list': {
+        const ancestors = this.bulletAncestorExpansions(editor, from.line);
+        return [
+          this.wordAt(editor, from),
+          this.urlAt(editor, from, to),
+          this.bulletSentence(editor, from, to),
+          this.bulletContent(editor, from),
+          this.bulletWithChildren(editor, from.line),
+          ...ancestors,
+          this.paragraph(editor, from),
+          this.section(editor, from, to),
+          this.wholeDoc(editor),
+        ];
+      }
       default:
         return [
           this.wordAt(editor, from),
@@ -364,15 +391,15 @@ export default class Expandomatic extends Plugin {
   private sentence(editor: Editor, from: EditorPosition, to: EditorPosition): Range | null {
     const pr = this.paragraphBounds(editor, from.line);
     const base = mk(pr.start, 0);
-    const text  = editor.getRange(base, mk(pr.end, editor.getLine(pr.end).length));
+    const text = editor.getRange(base, mk(pr.end, editor.getLine(pr.end).length));
 
     const fromOff = this.toOffset(editor, from, pr.start);
-    const toOff   = this.toOffset(editor, to, pr.start);
-    const sent    = findSentence(text, fromOff, toOff);
+    const toOff = this.toOffset(editor, to, pr.start);
+    const sent = findSentence(text, fromOff, toOff);
     if (!sent) return null;
 
     const anchor = this.fromOffset(editor, sent.start, pr.start);
-    const head   = this.fromOffset(editor, sent.end,   pr.start);
+    const head = this.fromOffset(editor, sent.end, pr.start);
     // If the sentence range equals the current selection, bail (caller will try paragraph).
     if (posEq(anchor, from) && posEq(head, to)) return null;
     return { anchor, head };
@@ -424,6 +451,66 @@ export default class Expandomatic extends Plugin {
     }
 
     return best;
+  }
+
+  // ── List / bullet ───────────────────────────────────────────────────────
+
+  private bulletSentence(editor: Editor, from: EditorPosition, to: EditorPosition): Range | null {
+    const line = editor.getLine(from.line);
+    const offset = bulletContentOffset(line);
+    if (offset < 0) return null;
+    const text = line.slice(offset);
+    const fromOff = Math.max(0, from.ch - offset);
+    const toOff = to.line === from.line ? Math.max(0, to.ch - offset) : text.length;
+    const sent = findSentence(text, fromOff, toOff);
+    if (!sent) return null;
+    const anchor = mk(from.line, offset + sent.start);
+    const head = mk(from.line, offset + sent.end);
+    if (posEq(anchor, from) && posEq(head, to)) return null;
+    return { anchor, head };
+  }
+
+  private bulletContent(editor: Editor, pos: EditorPosition): Range | null {
+    const line = editor.getLine(pos.line);
+    const offset = bulletContentOffset(line);
+    if (offset < 0) return null;
+    return rng(pos.line, offset, pos.line, line.length);
+  }
+
+  private bulletWithChildren(editor: Editor, bulletLine: number): Range | null {
+    const lc = editor.lineCount();
+    const line = editor.getLine(bulletLine);
+    const myIndent = bulletIndentLevel(line);
+    if (myIndent < 0) return null;
+    let end = bulletLine;
+    for (let i = bulletLine + 1; i < lc; i++) {
+      const l = editor.getLine(i);
+      if (l.trim() === '') break;
+      const lineIndent = l.match(/^(\s*)/)?.[1].length ?? 0;
+      const bIndent = bulletIndentLevel(l);
+      if (bIndent >= 0 && bIndent <= myIndent) break;
+      if (bIndent < 0 && lineIndent <= myIndent) break;
+      end = i;
+    }
+    return rng(bulletLine, 0, end, editor.getLine(end).length);
+  }
+
+  private bulletAncestorExpansions(editor: Editor, bulletLine: number): Array<Range | null> {
+    const line = editor.getLine(bulletLine);
+    let myIndent = bulletIndentLevel(line);
+    if (myIndent < 0) return [];
+    const results: Array<Range | null> = [];
+    for (let i = bulletLine - 1; i >= 0; i--) {
+      const l = editor.getLine(i);
+      if (l.trim() === '') break;
+      const bIndent = bulletIndentLevel(l);
+      if (bIndent >= 0 && bIndent < myIndent) {
+        results.push(this.bulletWithChildren(editor, i));
+        myIndent = bIndent;
+        if (myIndent === 0) break;
+      }
+    }
+    return results;
   }
 
   private wholeDoc(editor: Editor): Range {

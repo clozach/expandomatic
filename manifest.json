@@ -3,7 +3,7 @@
   "name": "Expandomatic",
   "version": "1.0.0",
   "minAppVersion": "0.15.0",
-  "description": "Expand selection outward: word → sentence → paragraph → section → document. Handles tables, code blocks, and equations.",
+  "description": "Expand selection outward through word, sentence, paragraph, section, document — like VSCode's expand selection.",
   "author": "Onsi Fakhouri",
   "isDesktopOnly": false
 }
