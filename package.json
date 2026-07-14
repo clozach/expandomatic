@@ -1,6 +1,6 @@
 {
   "name": "expandomatic",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Expand selection outward through word, sentence, paragraph, section, document — like VSCode's expand selection.",
   "main": "main.js",
   "scripts": {
@@ -17,5 +17,10 @@
     "obsidian": "latest",
     "tslib": "2.4.0",
     "typescript": "4.7.4"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
   }
 }
