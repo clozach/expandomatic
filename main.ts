@@ -194,7 +194,10 @@ export default class Expandomatic extends Plugin {
     if (!this.selectionSetEq(current, expanded)) {
       state.stack.push(current);
       editor.setSelections(expanded);
-      state.lastSet = expanded;
+      // Re-read what the editor actually holds: CodeMirror normalizes the set
+      // we hand it (merging identical/overlapping ranges), and shrink()'s
+      // strict-match guard must compare against that reality, not our intent.
+      state.lastSet = this.currentSelections(editor);
     }
   }
 
@@ -232,7 +235,7 @@ export default class Expandomatic extends Plugin {
 
     const previous = state.stack.pop()!;
     editor.setSelections(previous);
-    state.lastSet = previous;
+    state.lastSet = this.currentSelections(editor);
   }
 
   // ── Context detection ───────────────────────────────────────────────────

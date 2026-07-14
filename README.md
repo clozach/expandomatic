@@ -62,6 +62,10 @@ Sentence detection uses punctuation heuristics (`.` `!` `?` followed by a capita
 | 3rd | Entire line |
 | 4th | Entire `$$` block |
 
+## Multi-cursor behavior
+
+Each cursor expands independently. When two or more cursors expand into the *same* enclosing unit (e.g. three cursors under one section heading), CodeMirror merges the identical ranges into a single selection — correct, since they now denote the same text. Shrink walks the merge back: the next Shrink restores the separate pre-merge selections. (Fixed in 1.0.2: the plugin now re-reads the editor's post-normalization selection state, so Shrink no longer goes dead after a merging Expand.)
+
 ## Installation
 
 1. Build: `pnpm install --frozen-lockfile && pnpm run build`
