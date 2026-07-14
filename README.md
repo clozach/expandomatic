@@ -64,7 +64,7 @@ Sentence detection uses punctuation heuristics (`.` `!` `?` followed by a capita
 
 ## Installation
 
-1. Build: `npm ci && npm run build`
+1. Build: `pnpm install --frozen-lockfile && pnpm run build`
 2. Copy `main.js` and `manifest.json` into `<vault>/.obsidian/plugins/expandomatic/`
 3. Enable the plugin in **Settings → Community Plugins**
 
@@ -73,7 +73,7 @@ Assign hotkeys under **Settings → Hotkeys** by searching for "Expand Selection
 ## Development
 
 ```bash
-npm install
-npm run dev   # watch mode, rebuilds on save
-npm run build # production build
+pnpm install --frozen-lockfile
+pnpm run dev   # watch mode, rebuilds on save
+pnpm run build # production build
 ```
