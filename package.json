@@ -1,6 +1,6 @@
 {
   "name": "expandomatic",
-  "version": "1.0.3",
+  "version": "1.0.1",
   "description": "Expand selection outward through word, sentence, paragraph, section, document — like VSCode's expand selection.",
   "main": "main.js",
   "scripts": {

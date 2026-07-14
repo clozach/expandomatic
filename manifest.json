@@ -1,7 +1,7 @@
 {
   "id": "expandomatic",
   "name": "Expandomatic",
-  "version": "1.0.3",
+  "version": "1.0.1",
   "minAppVersion": "0.15.0",
   "description": "Expand selection outward through word, sentence, paragraph, section, document — like VSCode's expand selection.",
   "author": "Onsi Fakhouri",
