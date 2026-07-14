@@ -23,7 +23,7 @@ Press **⌃⇧⌘←** (Control+Shift+Command+Left Arrow) to shrink back through
 | 5th+ | Innermost section (heading + content), then parent sections outward |
 | Last | Entire document |
 
-Sentence detection uses punctuation heuristics (`.` `!` `?` followed by a capital letter or end of text). Single-letter abbreviations like `U.S.` and `Dr.` are not treated as sentence boundaries.
+Sentence detection uses punctuation heuristics (`.` `!` `?` followed by a capital letter or end of text). It avoids splitting common titles such as `Dr.` and `Prof.`, plus single-letter abbreviations; it is deliberately heuristic rather than a full natural-language parser.
 
 ### Inside a table
 
@@ -64,11 +64,11 @@ Sentence detection uses punctuation heuristics (`.` `!` `?` followed by a capita
 
 ## Installation
 
-1. Build: `npm install && npm run build`
+1. Build: `npm ci && npm run build`
 2. Copy `main.js` and `manifest.json` into `<vault>/.obsidian/plugins/expandomatic/`
 3. Enable the plugin in **Settings → Community Plugins**
 
-Hotkeys can be rebound under **Settings → Hotkeys** by searching for "Expand Selection" or "Shrink Selection". The defaults are **⌃⇧⌘→** (expand) and **⌃⇧⌘←** (shrink).
+Assign hotkeys under **Settings → Hotkeys** by searching for "Expand Selection" and "Shrink Selection". Suggested macOS bindings are **⌃⇧⌘→** (expand) and **⌃⇧⌘←** (shrink); the plugin does not claim these automatically.
 
 ## Development
 
